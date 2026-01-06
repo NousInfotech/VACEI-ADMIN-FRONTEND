@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -8,14 +8,15 @@ import { login } from "@/api/authService";
 import Link from "next/link"; // Import Link
 
 export default function LoginForm() {
-  
   const router = useRouter();
   const searchParams = useSearchParams();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {}
+  );
   const [loading, setLoading] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
@@ -23,7 +24,7 @@ export default function LoginForm() {
   useEffect(() => {
     const message = searchParams.get("message");
     if (message) {
-        localStorage.clear();
+      localStorage.clear();
       setAlertMessage(message);
       router.replace("/login", { scroll: false });
     }
@@ -48,28 +49,42 @@ export default function LoginForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!validate()) return;
-  setLoading(true);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
 
-  try {
-    const { token, username, user_id } = await login({ email, password });
+    try {
+      const { token, username, user_id } = await login({ email, password });
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("username", btoa(username));
-    localStorage.setItem("email", btoa(email));
-    localStorage.setItem("user_id", btoa(user_id));
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", btoa(username));
+      localStorage.setItem("email", btoa(email));
+      localStorage.setItem("user_id", btoa(user_id));
 
-    router.push("/dashboard");
-  } catch (err) {
-    const errorMessage = (err as Error)?.message || "An unknown error occurred";
-    setErrors({ email: errorMessage, password: "" });
-  } finally {
-    setLoading(false);
-  }
-};
+      // Set cookie for middleware access (works in production)
+      // Middleware runs on server and can only access cookies, not localStorage
+      const isHttps =
+        typeof window !== "undefined" && window.location.protocol === "https:";
+      const cookieOptions = isHttps
+        ? "SameSite=None; Secure; Path=/; Max-Age=86400" // 24 hours, secure for HTTPS (production)
+        : "SameSite=Lax; Path=/; Max-Age=86400"; // 24 hours, works for localhost (development)
 
+      if (typeof document !== "undefined") {
+        document.cookie = `admin-token=${encodeURIComponent(
+          token
+        )}; ${cookieOptions}`;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      const errorMessage =
+        (err as Error)?.message || "An unknown error occurred";
+      setErrors({ email: errorMessage, password: "" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="banner_section min-h-screen flex items-center justify-center">
@@ -96,7 +111,9 @@ const handleLogin = async (e: React.FormEvent) => {
             </div>
 
             <div className="login_card_body text-center">
-              <p className="mb-6 text-gray-600">Please enter your admin credentials to continue..</p>
+              <p className="mb-6 text-gray-600">
+                Please enter your admin credentials to continue..
+              </p>
 
               <form className="flex flex-col gap-4" onSubmit={handleLogin}>
                 <div>
@@ -108,7 +125,9 @@ const handleLogin = async (e: React.FormEvent) => {
                     className="form-control w-full border p-2 rounded"
                   />
                   {errors.email && (
-                    <p className="text-red-500 text-sm text-start pt-1">{errors.email}</p>
+                    <p className="text-red-500 text-sm text-start pt-1">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
 
@@ -121,7 +140,9 @@ const handleLogin = async (e: React.FormEvent) => {
                     className="form-control w-full border p-2 rounded"
                   />
                   {errors.password && (
-                    <p className="text-red-500 text-sm text-start pt-1">{errors.password}</p>
+                    <p className="text-red-500 text-sm text-start pt-1">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
@@ -137,7 +158,10 @@ const handleLogin = async (e: React.FormEvent) => {
 
             <div className="login_card_footer mt-6 text-center text-sm text-gray-700">
               <p className="mt-2">
-                <Link href="/forgot-password" className="text-primary font-semibold hover:underline">
+                <Link
+                  href="/forgot-password"
+                  className="text-primary font-semibold hover:underline"
+                >
                   Forgot Password?
                 </Link>
               </p>
